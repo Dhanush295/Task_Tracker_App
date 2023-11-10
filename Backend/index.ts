@@ -1,5 +1,5 @@
 import express, { Application, Request, Response } from "express";
-import userRoutes from "./routes/task";
+import userRoutes from "./routes/tasks";
 import cors from "cors";
 import mongoose from "mongoose";
 
@@ -17,9 +17,9 @@ mongoose
     })
     .then(() => {
         console.log('Database connected');
+        app.listen(port, ()=>{console.log(`Server listening on port:http://localhost:${port}`)})
     })
     .catch((error) => {
         console.error('Database connection error:', error);
     });
 
-app.listen(port, ()=>{console.log(`Server listening on port:http://localhost:${port}`)})

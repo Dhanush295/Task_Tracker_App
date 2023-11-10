@@ -1,30 +1,29 @@
-import mongoose, { Schema, Document} from "mongoose";
+import mongoose, { Schema, Document, Model} from "mongoose";
 
-
-interface Ialltasks {
-    _id: mongoose.Types.ObjectId,
-    title: String,
-    description: String,
-    finished: Boolean
+interface Users extends Document {
+    username: string,
+    password: string,
+    tasks: Array<mongoose.Types.ObjectId>
 }
 
-interface Iusers extends Document {
-    username: String,
-    password: String,
-    task: Ialltasks['_id'][];
-}
-
-const UsersSchema:Schema<Iusers> = new Schema({
-    username: String,
-    password: String,
-    task:  [{ type: mongoose.Schema.Types.ObjectId, ref: 'TASK ' }],
-}) ;
-
-const TaskSchema: Schema<Ialltasks> = new Schema({
-    title: String,
-    description: String,
-    finished: Boolean
+const userSchema = new Schema<Users>({
+    username: {type: String, required: true},
+    password: {type: String, required: true},
+    tasks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Task' }]
 });
 
-export const USERS = mongoose.model('users', UsersSchema)
-export const TASK = mongoose.model('Task', TaskSchema);
+interface Tasks extends Document {
+    title: string,
+    description: string,
+    finished: boolean,
+}
+
+const TaskSchema = new Schema<Tasks>({
+    title: {type: String, required: true},
+    description: {type: String, required: true},
+    finished: {type: Boolean, required: true}
+})
+
+
+export const USERS: Model<Users> = mongoose.model<Users>("allusers", userSchema); 
+export const TASK: Model<Tasks> = mongoose.model<Tasks>("tasks", TaskSchema); 
