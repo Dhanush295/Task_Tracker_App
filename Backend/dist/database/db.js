@@ -35,5 +35,5 @@ const TaskSchema = new mongoose_1.Schema({
     description: { type: String, required: true },
     finished: { type: Boolean, required: true }
 });
-exports.USERS = mongoose_1.default.model("Alluser", userSchema);
-exports.TASK = mongoose_1.default.model("Task", TaskSchema);
+exports.USERS = mongoose_1.default.model("allusers", userSchema);
+exports.TASK = mongoose_1.default.model("tasks", TaskSchema);

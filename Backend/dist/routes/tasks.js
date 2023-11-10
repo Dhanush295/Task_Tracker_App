@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const db_1 = require("../database/db");
+const db_1 = require("../dataBase/db");
 const router = (0, express_1.Router)();
 router.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { username, password } = req.body;
@@ -31,7 +31,7 @@ router.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* 
     const username = req.headers.username;
     const password = req.headers.password;
     if (!username || !password) {
-        return res.status(400).json({ message: "Username and password must be provided in headers" });
+        return res.status(400).json({ message: "Username or password must be provided!" });
     }
     try {
         const user = yield db_1.USERS.findOne({ username, password });
