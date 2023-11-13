@@ -3,31 +3,29 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.comparePasswords = exports.hashPassword = void 0;
-const bcryptjs_1 = __importDefault(require("bcryptjs"));
-const saltRounds = 10;
-const hashPassword = (password) => {
-    const salt = bcryptjs_1.default.genSaltSync(saltRounds);
-    const hashedPassword = bcryptjs_1.default.hashSync(password, salt);
-    if (hashedPassword) {
-        return hashedPassword;
+exports.authJwt = exports.SECRET = void 0;
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+exports.SECRET = "CourseSEllingAppJWTtoken";
+const authJwt = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (authHeader) {
+        const token = authHeader.split(' ')[1];
+        jsonwebtoken_1.default.verify(token, exports.SECRET, (err, user) => {
+            if (err) {
+                return res.sendStatus(403);
+            }
+            if (!user) {
+                return res.sendStatus(403);
+            }
+            if (typeof user === "string") {
+                return res.sendStatus(403);
+            }
+            req.headers["userId"] = user.id;
+            next();
+        });
     }
     else {
-        throw new Error('Error hashing the password');
+        res.sendStatus(401);
     }
 };
-exports.hashPassword = hashPassword;
-const comparePasswords = (password, hashedPassword) => {
-    return new Promise((resolve, reject) => {
-        bcryptjs_1.default.compare(password, hashedPassword, (err, result) => {
-            if (err) {
-                console.error(err);
-                reject(err);
-            }
-            else {
-                resolve(result);
-            }
-        });
-    });
-};
-exports.comparePasswords = comparePasswords;
+exports.authJwt = authJwt;

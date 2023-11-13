@@ -8,34 +8,25 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const db_1 = require("../database/db");
+const hash_1 = require("../authenticate/hash");
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const auth_1 = require("../authenticate/auth");
 const router = (0, express_1.Router)();
-// Middleware to check if the user is authenticated using cookies
-router.use((req, res, next) => {
-    const { sessionId } = req.cookies;
-    if (!sessionId) {
-        return res.status(401).json({ message: "Unauthorized" });
-    }
-    // Replace this with your logic to fetch user data from the database
-    const user = yield db_1.USERS.findOne({ _id: sessionId });
-    if (!user) {
-        return res.status(401).json({ message: "Unauthorized" });
-    }
-    req.user = user; // Attach the user to the request for further use
-    next();
-});
 router.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { username, password } = req.body;
+    const inputs = req.body;
     try {
-        const user = yield db_1.USERS.findOne({ username });
+        const user = yield db_1.USERS.findOne({ username: inputs.username });
         if (user) {
             return res.json({ message: "User already exists" });
         }
-        const hashedPassword = (0, auth_1.hashPassword)(password);
-        const newUser = new db_1.USERS({ username: username, password: hashedPassword });
+        const hashedPassword = (0, hash_1.hashPassword)(inputs.password);
+        const newUser = new db_1.USERS({ username: inputs.username, password: hashedPassword });
         yield newUser.save();
         return res.status(200).json({ message: "User Created Successfully" });
     }
@@ -44,18 +35,17 @@ router.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
 }));
 router.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const username = req.body.username;
-    const password = req.body.password;
-    if (!username || !password) {
+    const inputs = req.body;
+    if (!inputs.username || !inputs.password) {
         return res.status(400).json({ message: "Username or password must be provided!" });
     }
     try {
-        const user = yield db_1.USERS.findOne({ username });
+        const user = yield db_1.USERS.findOne({ username: inputs.username });
         if (user) {
-            const isPasswordMatch = yield (0, auth_1.comparePasswords)(password, user.password);
+            const isPasswordMatch = yield (0, hash_1.comparePasswords)(inputs.password, user.password);
             if (isPasswordMatch) {
-                req.session.userId = user._id; // Set the session variable
-                return res.status(200).json({ message: "Logged In Successfully!" });
+                const token = jsonwebtoken_1.default.sign({ username: inputs.username }, auth_1.SECRET, { expiresIn: '1h' });
+                return res.status(200).json({ message: "Logged In Successfully!", token: token });
             }
             else {
                 return res.status(401).json({ message: "Authentication Failed" });
@@ -67,22 +57,32 @@ router.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* 
         return res.status(500).json({ message: "Login failed" });
     }
 }));
-router.post("/create-task", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const newTask = req.body;
-    try {
-        const task = yield db_1.TASK.findOne({ title: newTask.title });
-        if (task) {
-            return res.status(400).json({ message: "Task Already exists!" });
+router.post("/tasks", auth_1.authJwt, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    let newTask = req.body;
+    const userId = req.headers["user_id"];
+    if (userId) {
+        const taskTitle = yield db_1.TASK.findOne({ title: newTask.title });
+        if (taskTitle) {
+            return res.status(400).json({ message: "Task already exists!" });
         }
-        // Replace this with your logic to associate the task with the authenticated user
-        const user = req.user; // Access the user from the middleware
-        newTask.userId = user._id; // Associate the task with the user
-        const saveTask = new db_1.TASK(newTask);
-        yield saveTask.save();
-        return res.status(200).json({ message: "Task created Successfully!" });
+        else {
+            // Create and save the new task
+            const addTask = new db_1.TASK(newTask);
+            yield addTask.save();
+            // Find the user by their ID and update their tasks array
+            const user = yield db_1.USERS.findOne({ _id: userId });
+            if (user) {
+                user.tasks.push(addTask._id);
+                yield user.save();
+                return res.status(200).json({ message: "Task Created Successfully" });
+            }
+            else {
+                return res.status(400).json({ message: "User not found!" });
+            }
+        }
     }
-    catch (error) {
-        return res.status(500).json({ message: "Task creation failed" });
+    else {
+        return res.status(401).json({ message: "User ID not provided in headers!" });
     }
 }));
 exports.default = router;
