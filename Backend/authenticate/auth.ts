@@ -1,28 +1,20 @@
-import bcrypt from "bcryptjs";
-const saltRounds: number = 10;
+import  jwt  from "jsonwebtoken";
+import express, { Request, Response, NextFunction } from "express";
 
-export const hashPassword = (password: string): string => {
-    const salt = bcrypt.genSaltSync(saltRounds);
-    const hashedPassword = bcrypt.hashSync(password, salt);
+const SECRET: string = "CourseSEllingAppJWTtoken";
 
-    if (hashedPassword) {
-        return hashedPassword;
+export const authJwt = (req: Request, res:Response, next:NextFunction) => {
+    const authHeader = req.headers.authorization;
+    if (authHeader) {
+      const token = authHeader.split(' ')[1];
+      jwt.verify(token, SECRET, (err, user) => {
+        if (err) {
+          return res.sendStatus(403);
+        }
+        req.headers.userId = user.id;
+        next();
+      });
     } else {
-        throw new Error('Error hashing the password');
+      res.sendStatus(401);
     }
-
-};
-
-export const comparePasswords = (password: string, hashedPassword: string):Promise <boolean>  => {
-    return new Promise((resolve, reject) => {
-        bcrypt.compare(password, hashedPassword, (err, result) => {
-            if (err) {
-                console.error(err);
-                reject(err);
-            } else {
-                resolve(result);
-            }
-        });
-    });
-};
-
+  };

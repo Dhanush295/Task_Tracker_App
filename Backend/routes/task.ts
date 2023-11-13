@@ -1,7 +1,7 @@
 import express, { Request, Response, Router } from "express";
 import { TASK, USERS } from "../database/db";
 import bcrypt from "bcryptjs";
-import { hashPassword, comparePasswords } from "../authenticate/auth";
+import { hashPassword, comparePasswords } from "../authenticate/hash";
 const router = Router();
 
 interface Users {
