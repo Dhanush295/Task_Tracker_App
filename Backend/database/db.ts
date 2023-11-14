@@ -22,7 +22,7 @@ interface User extends Document {
 
 const UserSchema = new Schema<User>({
   username: { type: String, required: true },
-  password: { type: String, required: true },
+  password: { type: String, required: true, select: false },
   tasks: [{ type: Schema.Types.ObjectId, ref: "Task" }], // Reference to tasks
 });
 

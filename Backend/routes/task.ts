@@ -2,89 +2,110 @@ import express, { Request, Response, Router } from "express";
 import { TASK, USERS } from "../database/db";
 import { hashPassword, comparePasswords } from "../authenticate/hash";
 import  jwt  from "jsonwebtoken";
-import { SECRET, authJwt } from "../authenticate/auth";
-const router = Router();
+import { authenticateJwt, SECRET } from "../authenticate/auth";
 
-interface UsersInput {
-    username: string;
-    password: string;
-}
-
-interface Tasks {
+interface CreateTodoInput {
     title: string,
     description: string,
-    finished: boolean,
+  }
+
+interface UserCred {
+    username: string,
+    password: string,
 }
 
-router.post("/signup", async (req: Request, res: Response) => {
-    const inputs: UsersInput = req.body ;
 
-    try {
-        const user = await USERS.findOne({ username: inputs.username });
-        if (user) {
-            return res.json({ message: "User already exists" });
-        }
-        const hashedPassword = hashPassword(inputs.password);
-        const newUser = new USERS({ username: inputs.username , password: hashedPassword });
-        await newUser.save();
-        return res.status(200).json({ message: "User Created Successfully" });
-    } catch (error) {
-        return res.status(500).json({ message: "User creation failed" });
+const router = Router();
+
+router.post('/signup', async (req, res) => {
+    let parsedInput: UserCred = req.body
+    if (!parsedInput.username) {
+      return res.status(403).json({
+        msg: "error"
+      });
     }
-});
-
-router.post("/login", async (req: Request, res: Response) => {
-    const inputs: UsersInput = req.body ;
-
-    if (!inputs.username || !inputs.password) {
-        return res.status(400).json({ message: "Username or password must be provided!" });
+    const username = parsedInput.username 
+    const password = parsedInput.password 
+    
+    const user = await USERS.findOne({ username: parsedInput.username });
+    if (user) {
+      res.status(403).json({ message: 'User already exists' });
+    } else {
+      const newUser = new USERS({ username, password });
+      await newUser.save();
+      res.json({ message: 'User created successfully'});
     }
-    try {
-        const user = await USERS.findOne({ username: inputs.username });
-        if (user) {
-            const isPasswordMatch = await comparePasswords(inputs.password, user.password);
-            if (isPasswordMatch) {
-                const token = jwt.sign({ username: inputs.username }, SECRET, { expiresIn: '1h' });
-                return res.status(200).json({ message: "Logged In Successfully!", token: token });
-            } else {
-                return res.status(401).json({ message: "Authentication Failed" });
-            }
-        }
-        return res.json({ message: "User login Failed!" });
-    } catch (error) {
-        return res.status(500).json({ message: "Login failed" });
+  });
+  
+  router.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    const user = await USERS.findOne({ username, password });
+    if (user) {
+      const token = jwt.sign({ id: user._id }, SECRET, { expiresIn: '1h' });
+      res.json({ message: 'Logged in successfully', token });
+    } else {
+      res.status(403).json({ message: 'Invalid username or password' });
     }
-});
+  });
 
-router.post("/tasks", authJwt, async (req:Request, res: Response)=>{
-    let newTask: Tasks = req.body;
-    const userId =  req.userId;
+  router.get('/me', authenticateJwt, async (req, res) => {
+    const userId = req.headers["userId"];
+    const user = await USERS.findOne({ _id: userId });
+    if (user) {
+      res.json({ username: user.username });
+    } else {
+      res.status(403).json({ message: 'User not logged in' });
+    }
+  });
 
-    if (userId) {
-        const taskTitle = await TASK.findOne({ title: newTask.title });
+  
+
+  
+  router.post('/todos', authenticateJwt, (req, res) => {
+    const { title, description } = req.body;
+    const done = false;
+    const userId = req.headers["userId"];
     
-        if (taskTitle) {
-          return res.status(400).json({ message: "Task already exists!" });
-        } else {
-          // Create and save the new task
-          const addTask = new TASK(newTask);
-          await addTask.save();
-    
-          // Find the user by their ID and update their tasks array
-          const user = await USERS.findOne({ _id: userId });
-    
-          if (user) {
-            user.tasks.push(addTask._id);
-            await user.save();
-            return res.status(200).json({ message: "Task Created Successfully" });
-          } else {
-            return res.status(400).json({ message: "User not found!" });
-          }
+    const newTodo = new TASK({ title, description, done, userId });
+  
+    newTodo.save()
+      .then((savedTodo) => {
+        res.status(201).json(savedTodo);
+      })
+      .catch((err) => {
+        res.status(500).json({ error: 'Failed to create a new todo' });
+      });
+  });
+  
+  
+  router.get('/todos', authenticateJwt, (req, res) => {
+    const userId = req.headers["userId"];
+  
+    TASK.find({ userId })
+      .then((tasks) => {
+        res.json(tasks);
+      })
+      .catch((err) => {
+        res.status(500).json({ error: 'Failed to retrieve todos' });
+      });
+  });
+  
+  router.patch('/todos/:todoId/done', authenticateJwt, (req, res) => {
+    const { todoId } = req.params;
+    const userId = req.headers["userId"];
+  
+    TASK.findOneAndUpdate({ _id: todoId, userId }, { done: true }, { new: true })
+      .then((updatedTask) => {
+        if (!updatedTask) {
+          return res.status(404).json({ error: 'Todo not found' });
         }
-      } else {
-        return res.status(401).json({ message: "User ID not provided in headers!" });
-      }
-});
+        res.json(updatedTask);
+      })
+      .catch((err) => {
+        res.status(500).json({ error: 'Failed to update todo' });
+      });
+  });
+
 
 
 

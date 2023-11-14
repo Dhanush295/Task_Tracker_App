@@ -32,7 +32,7 @@ const TaskSchema = new mongoose_1.Schema({
 });
 const UserSchema = new mongoose_1.Schema({
     username: { type: String, required: true },
-    password: { type: String, required: true },
+    password: { type: String, required: true, select: false },
     tasks: [{ type: mongoose_1.Schema.Types.ObjectId, ref: "Task" }], // Reference to tasks
 });
 // Create the models

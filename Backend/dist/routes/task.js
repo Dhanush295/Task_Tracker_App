@@ -14,75 +14,85 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const db_1 = require("../database/db");
-const hash_1 = require("../authenticate/hash");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const auth_1 = require("../authenticate/auth");
 const router = (0, express_1.Router)();
-router.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const inputs = req.body;
-    try {
-        const user = yield db_1.USERS.findOne({ username: inputs.username });
-        if (user) {
-            return res.json({ message: "User already exists" });
-        }
-        const hashedPassword = (0, hash_1.hashPassword)(inputs.password);
-        const newUser = new db_1.USERS({ username: inputs.username, password: hashedPassword });
-        yield newUser.save();
-        return res.status(200).json({ message: "User Created Successfully" });
+router.post('/signup', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    let parsedInput = req.body;
+    if (!parsedInput.username) {
+        return res.status(403).json({
+            msg: "error"
+        });
     }
-    catch (error) {
-        return res.status(500).json({ message: "User creation failed" });
-    }
-}));
-router.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const inputs = req.body;
-    if (!inputs.username || !inputs.password) {
-        return res.status(400).json({ message: "Username or password must be provided!" });
-    }
-    try {
-        const user = yield db_1.USERS.findOne({ username: inputs.username });
-        if (user) {
-            const isPasswordMatch = yield (0, hash_1.comparePasswords)(inputs.password, user.password);
-            if (isPasswordMatch) {
-                const token = jsonwebtoken_1.default.sign({ username: inputs.username }, auth_1.SECRET, { expiresIn: '1h' });
-                return res.status(200).json({ message: "Logged In Successfully!", token: token });
-            }
-            else {
-                return res.status(401).json({ message: "Authentication Failed" });
-            }
-        }
-        return res.json({ message: "User login Failed!" });
-    }
-    catch (error) {
-        return res.status(500).json({ message: "Login failed" });
-    }
-}));
-router.post("/tasks", auth_1.authJwt, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    let newTask = req.body;
-    const userId = req.headers["user_id"];
-    if (userId) {
-        const taskTitle = yield db_1.TASK.findOne({ title: newTask.title });
-        if (taskTitle) {
-            return res.status(400).json({ message: "Task already exists!" });
-        }
-        else {
-            // Create and save the new task
-            const addTask = new db_1.TASK(newTask);
-            yield addTask.save();
-            // Find the user by their ID and update their tasks array
-            const user = yield db_1.USERS.findOne({ _id: userId });
-            if (user) {
-                user.tasks.push(addTask._id);
-                yield user.save();
-                return res.status(200).json({ message: "Task Created Successfully" });
-            }
-            else {
-                return res.status(400).json({ message: "User not found!" });
-            }
-        }
+    const username = parsedInput.username;
+    const password = parsedInput.password;
+    const user = yield db_1.USERS.findOne({ username: parsedInput.username });
+    if (user) {
+        res.status(403).json({ message: 'User already exists' });
     }
     else {
-        return res.status(401).json({ message: "User ID not provided in headers!" });
+        const newUser = new db_1.USERS({ username, password });
+        yield newUser.save();
+        const token = jsonwebtoken_1.default.sign({ id: newUser._id }, auth_1.SECRET, { expiresIn: '1h' });
+        res.json({ message: 'User created successfully', token });
     }
 }));
+router.post('/login', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { username, password } = req.body;
+    const user = yield db_1.USERS.findOne({ username, password });
+    if (user) {
+        const token = jsonwebtoken_1.default.sign({ id: user._id }, auth_1.SECRET, { expiresIn: '1h' });
+        res.json({ message: 'Logged in successfully', token });
+    }
+    else {
+        res.status(403).json({ message: 'Invalid username or password' });
+    }
+}));
+router.get('/me', auth_1.authenticateJwt, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const userId = req.headers["userId"];
+    const user = yield db_1.USERS.findOne({ _id: userId });
+    if (user) {
+        res.json({ username: user.username });
+    }
+    else {
+        res.status(403).json({ message: 'User not logged in' });
+    }
+}));
+router.post('/todos', auth_1.authenticateJwt, (req, res) => {
+    const { title, description } = req.body;
+    const done = false;
+    const userId = req.headers["userId"];
+    const newTodo = new db_1.TASK({ title, description, done, userId });
+    newTodo.save()
+        .then((savedTodo) => {
+        res.status(201).json(savedTodo);
+    })
+        .catch((err) => {
+        res.status(500).json({ error: 'Failed to create a new todo' });
+    });
+});
+router.get('/todos', auth_1.authenticateJwt, (req, res) => {
+    const userId = req.headers["userId"];
+    db_1.TASK.find({ userId })
+        .then((tasks) => {
+        res.json(tasks);
+    })
+        .catch((err) => {
+        res.status(500).json({ error: 'Failed to retrieve todos' });
+    });
+});
+router.patch('/todos/:todoId/done', auth_1.authenticateJwt, (req, res) => {
+    const { todoId } = req.params;
+    const userId = req.headers["userId"];
+    db_1.TASK.findOneAndUpdate({ _id: todoId, userId }, { done: true }, { new: true })
+        .then((updatedTask) => {
+        if (!updatedTask) {
+            return res.status(404).json({ error: 'Todo not found' });
+        }
+        res.json(updatedTask);
+    })
+        .catch((err) => {
+        res.status(500).json({ error: 'Failed to update todo' });
+    });
+});
 exports.default = router;

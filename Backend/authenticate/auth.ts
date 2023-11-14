@@ -1,25 +1,27 @@
-import jwt from "jsonwebtoken";
+import jwt from 'jsonwebtoken';
+export const SECRET = 'SECr3t';  // This should be in an environment variable in a real application
 import { Request, Response, NextFunction } from "express";
 
-export const SECRET: string = "CourseSEllingAppJWTtoken";
-
-export const authJwt = (req: Request, res: Response, next: NextFunction) => {
+export const authenticateJwt = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
+
   if (authHeader) {
     const token = authHeader.split(' ')[1];
-    jwt.verify(token, SECRET, (err, user) => {
+    jwt.verify(token, SECRET, (err, payload) => {
       if (err) {
-        console.error("JWT verification error:", err);
-        return res.status(403).json({ message: "Forbidden: Invalid token" });
+        return res.sendStatus(403);
       }
-      if (!user || typeof user === "string") {
-        console.error("Invalid user data:", user);
-        return res.status(403).json({ message: "Forbidden: Invalid user data" });
+      if (!payload) {
+        return res.sendStatus(403);
       }
-      (req as any).userId = user.id;
+      if (typeof payload === "string") {
+        return res.sendStatus(403);
+      }
+      
+      req.headers["userId"] = payload.id;
       next();
     });
   } else {
-    return res.status(401).json({ message: "Unauthorized: Missing token" });
+    res.sendStatus(401);
   }
 };
