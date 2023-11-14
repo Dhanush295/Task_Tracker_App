@@ -1,40 +1,16 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TASK = exports.USERS = void 0;
-const mongoose_1 = __importStar(require("mongoose"));
-const TaskSchema = new mongoose_1.Schema({
-    title: { type: String, required: true },
-    description: { type: String, required: true },
-    finished: { type: Boolean, required: true },
-});
+const mongoose_1 = require("mongoose");
 const UserSchema = new mongoose_1.Schema({
-    username: { type: String, required: true },
-    password: { type: String, required: true, select: false },
-    tasks: [{ type: mongoose_1.Schema.Types.ObjectId, ref: "Task" }], // Reference to tasks
+    username: ({ type: String, required: true }),
+    password: ({ type: String, required: true }),
 });
-// Create the models
-exports.USERS = mongoose_1.default.model("User", UserSchema);
-exports.TASK = mongoose_1.default.model("Task", TaskSchema);
+const TaskSchema = new mongoose_1.Schema({
+    title: ({ type: String, required: true }),
+    description: ({ type: String, required: true }),
+    finished: ({ type: Boolean, required: true }),
+    user_id: ({ type: String, required: true }),
+});
+exports.USERS = (0, mongoose_1.model)("users", UserSchema);
+exports.TASK = (0, mongoose_1.model)("task", TaskSchema);

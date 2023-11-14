@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-export const SECRET = 'SECr3t';  // This should be in an environment variable in a real application
+export const SECRET = 'SECr3t';  
 import { Request, Response, NextFunction } from "express";
 
 export const authenticateJwt = (req: Request, res: Response, next: NextFunction) => {
