@@ -2,14 +2,10 @@ import express, { Application, Request, Response } from "express";
 import userRoutes from "./routes/task";
 import cors from "cors";
 import mongoose from "mongoose";
-import cookieParser from "cookie-parser";
-import compression from "compression";
 
 const app:Application = express();
 const port = 3000; 
 
-app.use(compression());
-app.use(cookieParser());
 app.use(cors());
 app.use(express.json());
 app.use("/", userRoutes);
