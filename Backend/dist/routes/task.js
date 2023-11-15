@@ -89,7 +89,7 @@ router.post('/task', auth_1.authenticateJwt, (req, res) => __awaiter(void 0, voi
 router.get('/task', auth_1.authenticateJwt, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const Id = req.headers["userId"];
-        const tasks = yield db_1.TASK.findById({ userId: Id });
+        const tasks = yield db_1.TASK.find({ user_id: Id });
         if (tasks) {
             return res.json({ tasks });
         }
@@ -99,15 +99,15 @@ router.get('/task', auth_1.authenticateJwt, (req, res) => __awaiter(void 0, void
         return res.status(400).json({ message: error.message });
     }
 }));
-router.patch('/task/:taskID/done', auth_1.authenticateJwt, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.delete('/task/:taskID/done', auth_1.authenticateJwt, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const taskId = req.params.taskID;
         const Id = req.headers["userId"];
-        const updateTask = yield db_1.TASK.findOneAndUpdate({ _id: taskId, user_id: Id }, { finished: true }, { new: true });
-        if (!updateTask) {
+        const deleteTask = yield db_1.TASK.findOneAndDelete({ _id: taskId, user_id: Id }, { finished: true });
+        if (!deleteTask) {
             return res.status(404).json({ error: 'Task not found' });
         }
-        res.json({ updateTask });
+        res.json({ message: "Task deleted!" });
     }
     catch (error) {
         return res.status(400).json({ message: error.message });

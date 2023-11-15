@@ -85,7 +85,7 @@ router.post('/signup', async (req: Request, res: Response) => {
   router.get('/task', authenticateJwt, async (req, res) => {
     try{
       const Id = req.headers["userId"];
-      const tasks = await TASK.findById({ userId: Id});
+      const tasks = await TASK.find({ user_id: Id});
       if(tasks){
         return res.json({tasks});
       }
@@ -98,19 +98,19 @@ router.post('/signup', async (req: Request, res: Response) => {
   
   });
   
-  router.patch('/task/:taskID/done', authenticateJwt, async (req, res) => {
+  router.delete('/task/:taskID/done', authenticateJwt, async (req, res) => {
     try{
       const taskId  = req.params.taskID;
       const Id = req.headers["userId"];
     
-      const updateTask = await TASK.findOneAndUpdate({ _id: taskId, user_id: Id }, { finished: true }, { new: true })
-        if (!updateTask) {
+      const deleteTask = await TASK.findOneAndDelete({ _id: taskId, user_id: Id }, { finished: true });
+      if(!deleteTask){
           return res.status(404).json({ error: 'Task not found' });
         }
-        res.json({updateTask});
+      res.json({message:"Task deleted!"});
     } catch(error: any){
       return res.status(400).json({message: error.message})
     }
-    });
+  });
     
 export default router;

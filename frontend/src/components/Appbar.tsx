@@ -32,6 +32,7 @@ function AppBar() {
         window.location.assign('/');
       };
     
+    if(user){
         return(
             <div style={{display: 'flex',backgroundColor:"black", color:"white" ,justifyContent: 'space-between'}}> 
                 <div style={{padding: 10, color:"white", fontWeight: 'bolder'}}>
@@ -49,6 +50,25 @@ function AppBar() {
                 </div>
             </div>
         )
+    }
+    return(
+        <div style={{display: 'flex',backgroundColor:"black", color:"white" ,justifyContent: 'space-between'}}> 
+            <div style={{padding: 10, color:"white", fontWeight: 'bolder'}}>
+            <Typography variant="h4" component="h2" >Task Manager</Typography>
+
+            </div>
+            <div style={{display: 'flex', padding: 10}}>
+                <div style={{padding: 10}}>
+                </div>
+                <div style={{padding: 10}}>
+                    <Button variant="contained"
+                    onClick={handleLogout}> SignUp</Button>
+                </div> 
+            </div>
+        </div>
+    )
+
+        
     }
 
 export default AppBar;
