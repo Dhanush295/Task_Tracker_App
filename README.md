@@ -11,6 +11,9 @@ Instruction to Install App locally
 4. npm install mongoose
 5. intsall all the required dependencies
 
-Command to run-
+Command to run Backend-
 npm run build to complie
 npm run start - To start project
+
+Command to run frontend-
+npm run dev -to run react
