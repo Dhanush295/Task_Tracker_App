@@ -1,10 +1,36 @@
 import * as React from 'react';
 import Button from '@mui/material/Button';
 import { Typography } from '@mui/material';
-import { Navigate, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+
 
 function AppBar() {
+    const [user, setUser ] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        async function getdata() {
+          try {
+            const response = await axios.get("http://localhost:3000/me", {
+              headers: {
+                "authorization": "Bearer " + localStorage.getItem("key")
+              }
+            });
+            if(response.data.username){
+                setUser(response.data.username);
+            }
+          } catch (error) {
+            console.error("Error fetching data:", error);
+          }
+        }
     
+        getdata(); 
+    
+      }, []);
+
+      const handleLogout = () => {
+        localStorage.setItem("key", "");
+        window.location.assign('/');
+      };
     
         return(
             <div style={{display: 'flex',backgroundColor:"black", color:"white" ,justifyContent: 'space-between'}}> 
@@ -14,10 +40,11 @@ function AppBar() {
                 </div>
                 <div style={{display: 'flex', padding: 10}}>
                     <div style={{padding: 10}}>
-                    <Typography color={"white"} variant='h5'></Typography>
+                    <Typography color={"white"} variant='h5'>{user}</Typography>
                     </div>
                     <div style={{padding: 10}}>
-                        <Button variant="contained"> Logout</Button>
+                        <Button variant="contained"
+                        onClick={handleLogout}> Logout</Button>
                     </div> 
                 </div>
             </div>

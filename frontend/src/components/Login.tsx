@@ -1,4 +1,5 @@
-import * as React from 'react';
+import React from 'react';
+import { useState } from 'react'
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -9,13 +10,29 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-// import axios from 'axios';
+import axios from 'axios';
+
+
+
 const defaultTheme = createTheme();
 
 export default function Login() {
+    const [ username, setUsername ] = useState<string>('');
+    const [ password, setPassword ] = useState<string>('');
+
+  const handleSubmit = async function addata() {
+    try {
     
+      const res = await axios.post("http://localhost:3000/login", { username, password });
+      localStorage.setItem("key", res.data.token);
+      window.location.assign('/home');
+    } catch (error) {
+      console.error("Error during signup:", error);
+    }
+    };
 
     return (
+      <form  onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
         <ThemeProvider theme={defaultTheme}>
       <Container component="main" maxWidth="xs">
         <CssBaseline />
@@ -38,12 +55,12 @@ export default function Login() {
               margin="normal"
               required
               fullWidth
-              id="email"
-              label="Email Address"
-              name="email"
+              id="username"
+              label="Username"
+              name="Username"
               autoComplete="email"
               autoFocus
-            //   onChange={}
+              onChange={(e)=>{ setUsername(e.target.value)}}
             />
             <TextField
               margin="normal"
@@ -54,14 +71,14 @@ export default function Login() {
               type="password"
               id="password"
               autoComplete="current-password"
-            //   onChange={}
+              onChange={(e)=>{setPassword(e.target.value)}}
             />
             <Button
               type="submit"
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
-            //   onClick = {}
+              onClick = {handleSubmit}
             >
               Login
             </Button>
@@ -76,6 +93,7 @@ export default function Login() {
         </Box>
       </Container>
     </ThemeProvider>
+    </form>
     );
 }
 

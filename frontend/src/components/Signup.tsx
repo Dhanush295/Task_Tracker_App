@@ -1,4 +1,5 @@
-import * as React from 'react';
+import React from 'react';
+import { useState } from 'react';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -9,15 +10,31 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-
+import axios from 'axios';
+import {  useNavigate  } from 'react-router-dom';
 
 
 const defaultTheme = createTheme();
 
 export default function Signup() {
+    const [ username, setUsername ] = useState<string>('');
+    const [ password, setPassword ] = useState<string>('');
+    const navigate =  useNavigate ();
+
+  const handleSubmit = async function updateUser() {
+  try {
     
+    const res = await axios.post("http://localhost:3000/signup", { username, password });
+    
+    alert(res.data.message);
+    navigate("/");
+  } catch (error) {
+    console.error("Error during signup:", error);
+  }
+};
 
   return (
+    <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
     <ThemeProvider theme={defaultTheme}>
       <Container component="main" maxWidth="xs">
         <CssBaseline />
@@ -45,7 +62,7 @@ export default function Signup() {
               name="username"
               autoComplete="username"
               autoFocus
-            //   onChange={(e)=>{setUsername(e.target.value)}}
+              onChange={(e)=>{ setUsername(e.target.value)}}
             />
             <TextField
               margin="normal"
@@ -56,14 +73,14 @@ export default function Signup() {
               type="password"
               id="password"
               autoComplete="current-password"
-            //   onChange={(e)=>{setPassword(e.target.value)}}
+              onChange={(e)=>{setPassword(e.target.value)}}
             />
             <Button
               type="submit"
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
-            //   onClick={handleSubmit}
+              onClick={handleSubmit}
             >
               Register
             </Button>
@@ -78,5 +95,6 @@ export default function Signup() {
         </Box>
       </Container>
     </ThemeProvider>
+    </form>
   );
 }
